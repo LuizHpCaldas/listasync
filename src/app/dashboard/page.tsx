@@ -188,9 +188,12 @@ export default function DashboardPage() {
                     R$ {Number(list.budget).toFixed(2)}
                   </p>
 
-                  <button className="mt-6 w-full rounded-xl border border-zinc-700 px-4 py-3 transition hover:bg-zinc-800">
+                  <a
+                    href={`/lists/${list.id}`}
+                    className="mt-6 block w-full rounded-xl border border-zinc-700 px-4 py-3 text-center transition hover:bg-zinc-800"
+                  >
                     Abrir lista
-                  </button>
+                  </a>
                 </div>
               ))}
             </div>

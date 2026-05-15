@@ -291,6 +291,32 @@ export default function ListPage() {
     setListStatus("shopping");
   }
 
+  async function finishShopping() {
+    const confirmed = confirm("Deseja finalizar esta compra?");
+
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from("shopping_lists")
+      .update({
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+
+      alert("Erro ao finalizar compra");
+
+      return;
+    }
+
+    setListStatus("completed");
+
+    alert("Compra finalizada!");
+  }
+
   useEffect(() => {
     queueMicrotask(() => {
       fetchItems();
@@ -591,29 +617,40 @@ export default function ListPage() {
         </div>
 
         {listStatus === "shopping" && (
-          <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-800 bg-zinc-900/95 p-4 backdrop-blur">
-            <div className="mx-auto flex max-w-5xl items-center justify-between">
-              <div>
-                <p className="text-xs text-zinc-400 md:text-sm">Total</p>
+          <>
+            <div className="mx-auto mb-24 max-w-5xl px-4 md:px-6">
+              <button
+                onClick={finishShopping}
+                className="w-full rounded-2xl bg-blue-500 px-6 py-4 text-lg font-bold text-white transition hover:opacity-90"
+              >
+                ✅ Finalizar compra
+              </button>
+            </div>
 
-                <h2 className="text-xl font-bold md:text-3xl">
-                  R$ {total.toFixed(2)}
-                </h2>
-              </div>
+            <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-800 bg-zinc-900/95 p-4 backdrop-blur">
+              <div className="mx-auto flex max-w-5xl items-center justify-between">
+                <div>
+                  <p className="text-xs text-zinc-400 md:text-sm">Total</p>
 
-              <div className="text-right">
-                <p className="text-xs text-zinc-400 md:text-sm">Restante</p>
+                  <h2 className="text-xl font-bold md:text-3xl">
+                    R$ {total.toFixed(2)}
+                  </h2>
+                </div>
 
-                <h2
-                  className={`text-xl font-bold md:text-3xl ${
-                    remaining < 0 ? "text-red-400" : "text-green-400"
-                  }`}
-                >
-                  R$ {remaining.toFixed(2)}
-                </h2>
+                <div className="text-right">
+                  <p className="text-xs text-zinc-400 md:text-sm">Restante</p>
+
+                  <h2
+                    className={`text-xl font-bold md:text-3xl ${
+                      remaining < 0 ? "text-red-400" : "text-green-400"
+                    }`}
+                  >
+                    R$ {remaining.toFixed(2)}
+                  </h2>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </main>
     </AppLayout>

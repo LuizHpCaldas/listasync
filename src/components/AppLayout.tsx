@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
+
 import { usePathname, useRouter } from "next/navigation";
+
 import { createClient } from "../lib/supabase/client";
+
 import {
   LayoutDashboard,
   ShoppingCart,
   Users,
   User,
   LogOut,
+  Store,
 } from "lucide-react";
 
 interface Props {
@@ -35,18 +39,28 @@ export default function AppLayout({ children }: Props) {
       label: "Dashboard",
       icon: LayoutDashboard,
     },
+
     {
       id: "listas",
       href: "/dashboard",
       label: "Listas",
       icon: ShoppingCart,
     },
+
+    {
+      id: "mercados",
+      href: "/supermarkets",
+      label: "Mercados",
+      icon: Store,
+    },
+
     {
       id: "compartilhadas",
       href: "/dashboard",
       label: "Compartilhadas",
       icon: Users,
     },
+
     {
       id: "perfil",
       href: "/profile",
@@ -72,7 +86,7 @@ export default function AppLayout({ children }: Props) {
 
             return (
               <Link
-                key={item.id}
+                key={`desktop-${item.id}`}
                 href={item.href}
                 className={`flex items-center gap-4 rounded-2xl px-5 py-4 transition ${
                   active
@@ -111,7 +125,7 @@ export default function AppLayout({ children }: Props) {
 
             return (
               <Link
-                key={item.id}
+                key={`mobile-${item.id}`}
                 href={item.href}
                 className={`flex flex-col items-center gap-1 px-3 py-2 text-xs transition ${
                   active ? "text-white" : "text-zinc-500"

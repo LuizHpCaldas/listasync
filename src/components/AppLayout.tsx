@@ -30,21 +30,25 @@ export default function AppLayout({ children }: Props) {
 
   const navItems = [
     {
+      id: "dashboard",
       href: "/dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
     },
     {
+      id: "listas",
       href: "/dashboard",
       label: "Listas",
       icon: ShoppingCart,
     },
     {
+      id: "compartilhadas",
       href: "/dashboard",
       label: "Compartilhadas",
       icon: Users,
     },
     {
+      id: "perfil",
       href: "/profile",
       label: "Perfil",
       icon: User,
@@ -68,7 +72,7 @@ export default function AppLayout({ children }: Props) {
 
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
                 className={`flex items-center gap-4 rounded-2xl px-5 py-4 transition ${
                   active
@@ -107,7 +111,7 @@ export default function AppLayout({ children }: Props) {
 
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
                 className={`flex flex-col items-center gap-1 px-3 py-2 text-xs transition ${
                   active ? "text-white" : "text-zinc-500"

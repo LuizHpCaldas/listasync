@@ -1,9 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { createClient } from "../../../lib/supabase/client";
+
+import { useParams, useRouter } from "next/navigation";
+
 import AppLayout from "../../../components/AppLayout";
+
+import { createClient } from "../../../lib/supabase/client";
+
+import { Supermarket } from "../../../types/supermarket";
+
 interface Item {
   id: string;
   name: string;
@@ -15,14 +21,21 @@ interface Item {
 export default function ListPage() {
   const supabase = createClient();
 
+  const router = useRouter();
+
   const params = useParams();
+
   const id = params.id as string;
 
   const [items, setItems] = useState<Item[]>([]);
+
   const [name, setName] = useState("");
+
   const [quantity, setQuantity] = useState("1");
 
   const [loading, setLoading] = useState(false);
+
+  const [deleting, setDeleting] = useState(false);
 
   const [listStatus, setListStatus] = useState<
     "planning" | "shopping" | "completed"
@@ -35,6 +48,10 @@ export default function ListPage() {
   const [shareEmail, setShareEmail] = useState("");
 
   const [sharing, setSharing] = useState(false);
+
+  const [supermarkets, setSupermarkets] = useState<Supermarket[]>([]);
+
+  const [selectedSupermarket, setSelectedSupermarket] = useState("");
 
   const fetchList = useCallback(async () => {
     const { data, error } = await supabase
@@ -49,27 +66,44 @@ export default function ListPage() {
     }
 
     setListStatus(data.status);
+
     setBudget(Number(data.budget));
+
+    if (data.supermarket_id) {
+      setSelectedSupermarket(data.supermarket_id);
+    }
   }, [id, supabase]);
 
   const fetchItems = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from("items")
-        .select("*")
-        .eq("list_id", id)
-        .order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from("items")
+      .select("*")
+      .eq("list_id", id)
+      .order("created_at", {
+        ascending: false,
+      });
 
-      if (error) {
-        console.error(error);
-        return;
-      }
-
-      setItems(data || []);
-    } catch (error) {
+    if (error) {
       console.error(error);
+      return;
     }
+
+    setItems(data || []);
   }, [id, supabase]);
+
+  const fetchSupermarkets = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("supermarkets")
+      .select("*")
+      .order("name");
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setSupermarkets(data || []);
+  }, [supabase]);
 
   async function createItem() {
     try {
@@ -88,16 +122,56 @@ export default function ListPage() {
 
       if (error) {
         console.error(error);
+
         alert(error.message);
+
         return;
       }
 
       setName("");
+
       setQuantity("1");
+
+      fetchItems();
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function deleteList() {
+    const confirmed = confirm("Deseja realmente excluir esta lista?");
+
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+
+      await supabase.from("items").delete().eq("list_id", id);
+
+      await supabase.from("list_members").delete().eq("list_id", id);
+
+      const { error } = await supabase
+        .from("shopping_lists")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+
+        alert("Erro ao excluir lista");
+
+        return;
+      }
+
+      alert("Lista excluída!");
+
+      router.push("/dashboard");
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -129,7 +203,9 @@ export default function ListPage() {
 
       if (error) {
         console.error(error);
+
         alert(error.message);
+
         return;
       }
 
@@ -143,6 +219,30 @@ export default function ListPage() {
     }
   }
 
+  async function saveSupermarket() {
+    if (!selectedSupermarket) {
+      alert("Selecione um supermercado");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("shopping_lists")
+      .update({
+        supermarket_id: selectedSupermarket,
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+
+      alert("Erro ao salvar mercado");
+
+      return;
+    }
+
+    alert("Supermercado salvo!");
+  }
+
   async function updatePrice(itemId: string, price: number) {
     const { error } = await supabase
       .from("items")
@@ -154,8 +254,9 @@ export default function ListPage() {
 
     if (error) {
       console.error(error);
-      return;
     }
+
+    fetchItems();
   }
 
   async function toggleChecked(itemId: string, checked: boolean) {
@@ -168,8 +269,9 @@ export default function ListPage() {
 
     if (error) {
       console.error(error);
-      return;
     }
+
+    fetchItems();
   }
 
   async function startShopping() {
@@ -182,6 +284,7 @@ export default function ListPage() {
 
     if (error) {
       alert("Erro ao iniciar compra");
+
       return;
     }
 
@@ -191,7 +294,10 @@ export default function ListPage() {
   useEffect(() => {
     queueMicrotask(() => {
       fetchItems();
+
       fetchList();
+
+      fetchSupermarkets();
     });
 
     const channel = supabase
@@ -213,7 +319,7 @@ export default function ListPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchItems, fetchList, id, supabase]);
+  }, [fetchItems, fetchList, fetchSupermarkets, id, supabase]);
 
   const total = items.reduce((acc, item) => {
     return acc + (item.price || 0) * item.quantity;
@@ -227,7 +333,7 @@ export default function ListPage() {
     <AppLayout>
       <main className="min-h-screen overflow-x-hidden bg-zinc-950 pb-32 text-white">
         <div className="mx-auto max-w-5xl p-4 md:p-6">
-          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
               <span className="inline-flex rounded-full bg-zinc-800 px-4 py-2 text-sm text-zinc-300">
                 {listStatus === "planning" && "🏠 Modo Casa"}
@@ -246,51 +352,89 @@ export default function ListPage() {
               </p>
             </div>
 
-            <div className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 p-5 md:max-w-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-zinc-400">Orçamento</p>
+            <div className="w-full md:w-80">
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-zinc-400">Orçamento</p>
 
-                <p className="text-sm text-zinc-400">
-                  {percentage.toFixed(0)}%
-                </p>
-              </div>
-
-              <div className="mt-3 h-3 overflow-hidden rounded-full bg-zinc-800">
-                <div
-                  style={{
-                    width: `${percentage}%`,
-                  }}
-                  className={`h-full transition-all ${
-                    percentage >= 100
-                      ? "bg-red-500"
-                      : percentage >= 80
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
-                  }`}
-                />
-              </div>
-
-              <div className="mt-5 flex items-end justify-between">
-                <div>
-                  <p className="text-sm text-zinc-400">Total</p>
-
-                  <h2 className="text-2xl font-bold md:text-3xl">
-                    R$ {total.toFixed(2)}
-                  </h2>
+                  <p className="text-sm text-zinc-400">
+                    {percentage.toFixed(0)}%
+                  </p>
                 </div>
 
-                <div className="text-right">
-                  <p className="text-sm text-zinc-400">Restante</p>
-
-                  <h2
-                    className={`text-xl font-bold md:text-2xl ${
-                      remaining < 0 ? "text-red-400" : "text-green-400"
+                <div className="mt-3 h-3 overflow-hidden rounded-full bg-zinc-800">
+                  <div
+                    style={{
+                      width: `${percentage}%`,
+                    }}
+                    className={`h-full transition-all ${
+                      percentage >= 100
+                        ? "bg-red-500"
+                        : percentage >= 80
+                          ? "bg-yellow-500"
+                          : "bg-green-500"
                     }`}
-                  >
-                    R$ {remaining.toFixed(2)}
-                  </h2>
+                  />
+                </div>
+
+                <div className="mt-5 flex items-end justify-between">
+                  <div>
+                    <p className="text-sm text-zinc-400">Total</p>
+
+                    <h2 className="text-2xl font-bold md:text-3xl">
+                      R$ {total.toFixed(2)}
+                    </h2>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-sm text-zinc-400">Restante</p>
+
+                    <h2
+                      className={`text-xl font-bold md:text-2xl ${
+                        remaining < 0 ? "text-red-400" : "text-green-400"
+                      }`}
+                    >
+                      R$ {remaining.toFixed(2)}
+                    </h2>
+                  </div>
                 </div>
               </div>
+
+              <button
+                onClick={deleteList}
+                disabled={deleting}
+                className="mt-3 w-full rounded-2xl bg-red-500 px-6 py-4 font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+              >
+                {deleting ? "Excluindo..." : "🗑️ Excluir lista"}
+              </button>
+            </div>
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            <h2 className="mb-4 text-xl font-bold">Supermercado</h2>
+
+            <div className="flex flex-col gap-3 md:flex-row">
+              <select
+                value={selectedSupermarket}
+                onChange={(e) => setSelectedSupermarket(e.target.value)}
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-4 outline-none"
+              >
+                <option value="">Selecione um supermercado</option>
+
+                {supermarkets.map((market) => (
+                  <option key={market.id} value={market.id}>
+                    {market.name}
+                    {market.city ? ` - ${market.city}` : ""}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={saveSupermarket}
+                className="rounded-xl bg-blue-500 px-6 py-4 font-semibold text-white transition hover:opacity-90"
+              >
+                Salvar
+              </button>
             </div>
           </div>
 

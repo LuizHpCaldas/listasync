@@ -1,36 +1,196 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛒 ListaSync
 
-## Getting Started
+Sistema inteligente de listas de compras colaborativas desenvolvido com:
 
-First, run the development server:
+- Next.js 16
+- React
+- TypeScript
+- TailwindCSS
+- Supabase
+- Realtime
+- Storage
+- Row Level Security (RLS)
+
+---
+
+# ✨ Funcionalidades
+
+## 🔐 Autenticação
+
+- Login
+- Cadastro
+- Logout
+- Sessão persistente
+
+---
+
+## 📋 Listas de Compras
+
+- Criar listas
+- Excluir listas
+- Compartilhar listas
+- Atualização em tempo real
+- Controle de orçamento
+
+---
+
+## 🏠 Modo Casa
+
+Planejamento da compra:
+
+- adicionar itens
+- definir quantidade
+- organizar lista antes da compra
+
+---
+
+## 🛒 Modo Mercado
+
+Durante a compra:
+
+- marcar itens comprados
+- adicionar preço real da gôndola
+- acompanhar orçamento em tempo real
+- cálculo automático do total
+
+---
+
+## 👥 Compartilhamento
+
+- Compartilhar listas por email
+- Múltiplos usuários na mesma lista
+- Sincronização realtime
+
+---
+
+## 🏪 Supermercados
+
+- Cadastro de mercados
+- Associação do mercado à lista
+- Base preparada para comparação de preços
+
+---
+
+## 👤 Perfil do Usuário
+
+- Nome personalizado
+- Upload de avatar
+- Armazenamento no Supabase Storage
+
+---
+
+# 🔒 Segurança
+
+## Upload Seguro de Imagens
+
+O sistema aceita apenas:
+
+- JPG
+- PNG
+- WEBP
+
+Proteções implementadas:
+
+- validação MIME type
+- limite de tamanho
+- UUID aleatório
+- isolamento por usuário
+- bloqueio de SVG
+- proteção contra overwrite
+
+---
+
+## Banco de Dados Seguro
+
+Utilizamos:
+
+- Row Level Security (RLS)
+- Policies por usuário
+- Controle de acesso por owner
+- Policies para compartilhamento
+
+---
+
+# ⚡ Realtime
+
+O sistema usa Supabase Realtime para:
+
+- sincronizar listas
+- atualizar itens instantaneamente
+- refletir alterações entre usuários
+
+---
+
+# 🧠 Tecnologias
+
+## Frontend
+
+- Next.js
+- React
+- TypeScript
+- TailwindCSS
+- Lucide Icons
+
+## Backend
+
+- Supabase
+- PostgreSQL
+- Supabase Auth
+- Supabase Storage
+- Supabase Realtime
+
+---
+
+# 📁 Estrutura
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+src/
+├── app/
+│   ├── dashboard/
+│   ├── lists/
+│   ├── login/
+│   ├── profile/
+│   └── supermarkets/
+│
+├── components/
+│   └── AppLayout.tsx
+│
+├── lib/
+│   └── supabase/
+│
+└── types/
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+##🗄️ Banco de Dados
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# O projeto utiliza:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+shopping_lists
+items
+list_members
+profiles
+supermarkets
 
-## Learn More
+Com RLS habilitado.
 
-To learn more about Next.js, take a look at the following resources:
+📌 Roadmap
+Futuras funcionalidades
+ - OCR de nota fiscal
+ - Scanner de código de barras
+ - Comparador de mercados
+ - IA para economia
+ - Histórico de compras
+ - PWA instalável
+ - Notificações realtime
+ - Analytics inteligentes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#📱 Responsividade
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Interface otimizada para:
 
-## Deploy on Vercel
+- Desktop
+- Tablet
+- Mobile
+##🧑‍💻 Autor
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Desenvolvido por Luiz Henrique Pereira Caldas 🚀

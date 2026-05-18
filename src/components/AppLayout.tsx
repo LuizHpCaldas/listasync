@@ -1,6 +1,10 @@
 "use client";
 
+import Image from "next/image";
+
 import Link from "next/link";
+
+import { useCallback, useEffect, useState } from "react";
 
 import { usePathname, useRouter } from "next/navigation";
 
@@ -19,12 +23,50 @@ interface Props {
   children: React.ReactNode;
 }
 
+interface Profile {
+  full_name: string | null;
+
+  avatar_url: string | null;
+}
+
 export default function AppLayout({ children }: Props) {
   const pathname = usePathname();
 
   const router = useRouter();
 
   const supabase = createClient();
+
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  const loadProfile = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
+      .single();
+
+    if (error) {
+      console.error(error);
+
+      return;
+    }
+
+    if (data) {
+      setProfile(data);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      loadProfile();
+    });
+  }, [loadProfile]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -42,7 +84,7 @@ export default function AppLayout({ children }: Props) {
 
     {
       id: "listas",
-      href: "/dashboard",
+      href: "/lists",
       label: "Listas",
       icon: ShoppingCart,
     },
@@ -56,7 +98,7 @@ export default function AppLayout({ children }: Props) {
 
     {
       id: "compartilhadas",
-      href: "/dashboard",
+      href: "/shared",
       label: "Compartilhadas",
       icon: Users,
     },
@@ -76,13 +118,41 @@ export default function AppLayout({ children }: Props) {
           <h1 className="text-3xl font-bold">ListaSync</h1>
 
           <p className="mt-2 text-sm text-zinc-400">Compras inteligentes</p>
+
+          <div className="mt-6 flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+            <div className="relative h-14 w-14 overflow-hidden rounded-full bg-zinc-800">
+              {profile?.avatar_url ? (
+                <Image
+                  src={profile.avatar_url}
+                  alt="Avatar"
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-2xl">
+                  👤
+                </div>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <p className="truncate text-sm text-zinc-400">Bem-vindo</p>
+
+              <h2 className="truncate text-lg font-bold">
+                {profile?.full_name || "Usuário"}
+              </h2>
+            </div>
+          </div>
         </div>
 
         <nav className="flex-1 space-y-2 p-4">
           {navItems.map((item) => {
             const Icon = item.icon;
 
-            const active = pathname === item.href;
+            const active =
+              item.href === "/dashboard"
+                ? pathname === "/dashboard"
+                : pathname.startsWith(item.href);
 
             return (
               <Link

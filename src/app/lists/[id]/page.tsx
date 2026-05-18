@@ -9,6 +9,7 @@ import AppLayout from "../../../components/AppLayout";
 import { createClient } from "../../../lib/supabase/client";
 
 import { Supermarket } from "../../../types/supermarket";
+import { toast } from "sonner";
 
 interface Item {
   id: string;
@@ -160,12 +161,12 @@ export default function ListPage() {
       if (error) {
         console.error(error);
 
-        alert("Erro ao excluir lista");
+        toast.error("Erro ao excluir lista");
 
         return;
       }
 
-      alert("Lista excluída!");
+      toast.success("Lista excluída!");
 
       router.push("/dashboard");
     } catch (error) {
@@ -221,7 +222,7 @@ export default function ListPage() {
 
   async function saveSupermarket() {
     if (!selectedSupermarket) {
-      alert("Selecione um supermercado");
+      toast.error("Selecione um supermercado");
       return;
     }
 
@@ -235,12 +236,12 @@ export default function ListPage() {
     if (error) {
       console.error(error);
 
-      alert("Erro ao salvar mercado");
+      toast.error("Erro ao salvar mercado");
 
       return;
     }
 
-    alert("Supermercado salvo!");
+    toast.success("Supermercado salvo!");
   }
 
   async function updatePrice(itemId: string, price: number) {
@@ -283,7 +284,7 @@ export default function ListPage() {
       .eq("id", id);
 
     if (error) {
-      alert("Erro ao iniciar compra");
+      toast.error("Erro ao iniciar compra");
 
       return;
     }
@@ -307,14 +308,14 @@ export default function ListPage() {
     if (error) {
       console.error(error);
 
-      alert("Erro ao finalizar compra");
+      toast.error("Erro ao finalizar compra");
 
       return;
     }
 
     setListStatus("completed");
 
-    alert("Compra finalizada!");
+    toast.success("Compra finalizada!");
   }
 
   useEffect(() => {

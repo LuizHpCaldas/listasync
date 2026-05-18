@@ -97,7 +97,7 @@ export default function AppLayout({ children }: Props) {
     },
 
     {
-      id: "compartilhadas",
+      id: "shared",
       href: "/shared",
       label: "Compartilhadas",
       icon: Users,

@@ -4,6 +4,7 @@ import AppLayout from "../../components/AppLayout";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
+import { toast } from "sonner";
 
 interface ShoppingList {
   id: string;
@@ -78,7 +79,7 @@ export default function DashboardPage() {
       if (!user) return;
 
       if (!title || !budget) {
-        alert("Preencha todos os campos");
+        toast.error("Preencha todos os campos");
         return;
       }
 

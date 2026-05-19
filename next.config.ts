@@ -5,10 +5,12 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "umibgbhwerytubdxxapf.supabase.co",
+        hostname: "*.supabase.co",
       },
     ],
   },
+
+  turbopack: {},
 };
 
 export default nextConfig;

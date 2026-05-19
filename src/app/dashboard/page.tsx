@@ -1,20 +1,27 @@
 "use client";
 
-import AppLayout from "../../components/AppLayout";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import AppLayout from "../../components/AppLayout";
+
 import { createClient } from "../../lib/supabase/client";
-import { toast } from "sonner";
 
 interface ShoppingList {
   id: string;
+
   title: string;
+
   budget: number;
+
   owner_id: string;
+
+  status: "planning" | "shopping" | "completed";
 }
 
 interface MemberListResponse {
-  shopping_lists: ShoppingList;
+  shopping_lists: ShoppingList[];
 }
 
 export default function DashboardPage() {
@@ -23,6 +30,7 @@ export default function DashboardPage() {
   const [lists, setLists] = useState<ShoppingList[]>([]);
 
   const [title, setTitle] = useState("");
+
   const [budget, setBudget] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -38,7 +46,9 @@ export default function DashboardPage() {
       .from("shopping_lists")
       .select("*")
       .eq("owner_id", user.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", {
+        ascending: false,
+      });
 
     const { data: memberLists } = await supabase
       .from("list_members")
@@ -48,14 +58,15 @@ export default function DashboardPage() {
           id,
           title,
           budget,
-          owner_id
+          owner_id,
+          status
         )
       `,
       )
       .eq("user_id", user.id);
 
     const formattedMemberLists =
-      (memberLists as MemberListResponse[] | null)?.map(
+      (memberLists as MemberListResponse[])?.map(
         (item) => item.shopping_lists,
       ) || [];
 
@@ -79,7 +90,8 @@ export default function DashboardPage() {
       if (!user) return;
 
       if (!title || !budget) {
-        toast.error("Preencha todos os campos");
+        alert("Preencha todos os campos");
+
         return;
       }
 
@@ -87,15 +99,19 @@ export default function DashboardPage() {
         title,
         budget: Number(budget),
         owner_id: user.id,
+        status: "planning",
       });
 
       if (error) {
         console.error(error);
+
         alert(error.message);
+
         return;
       }
 
       setTitle("");
+
       setBudget("");
 
       fetchLists();
@@ -112,9 +128,32 @@ export default function DashboardPage() {
     });
   }, [fetchLists]);
 
+  const stats = useMemo(() => {
+    const planning = lists.filter((list) => list.status === "planning").length;
+
+    const shopping = lists.filter((list) => list.status === "shopping").length;
+
+    const completed = lists.filter(
+      (list) => list.status === "completed",
+    ).length;
+
+    const totalBudget = lists.reduce(
+      (acc, list) => acc + Number(list.budget || 0),
+      0,
+    );
+
+    return {
+      total: lists.length,
+      planning,
+      shopping,
+      completed,
+      totalBudget,
+    };
+  }, [lists]);
+
   return (
     <AppLayout>
-      <main className="min-h-screen bg-zinc-950 p-6 text-white">
+      <main className="min-h-screen bg-zinc-950 p-4 pb-32 text-white md:p-6">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8">
             <h1 className="text-4xl font-bold">Dashboard</h1>
@@ -122,6 +161,46 @@ export default function DashboardPage() {
             <p className="mt-2 text-zinc-400">
               Gerencie suas listas de compras
             </p>
+          </div>
+
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <p className="text-sm text-zinc-400">Total de listas</p>
+
+              <h2 className="mt-3 text-3xl font-bold">{stats.total}</h2>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <p className="text-sm text-zinc-400">Planejamento</p>
+
+              <h2 className="mt-3 text-3xl font-bold text-blue-400">
+                {stats.planning}
+              </h2>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <p className="text-sm text-zinc-400">Comprando</p>
+
+              <h2 className="mt-3 text-3xl font-bold text-yellow-400">
+                {stats.shopping}
+              </h2>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <p className="text-sm text-zinc-400">Finalizadas</p>
+
+              <h2 className="mt-3 text-3xl font-bold text-green-400">
+                {stats.completed}
+              </h2>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <p className="text-sm text-zinc-400">Orçamento total</p>
+
+              <h2 className="mt-3 text-2xl font-bold text-green-400">
+                R$ {stats.totalBudget.toFixed(2)}
+              </h2>
+            </div>
           </div>
 
           <div className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
@@ -133,7 +212,7 @@ export default function DashboardPage() {
                 placeholder="Nome da lista"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 outline-none"
+                className="rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-4 outline-none transition focus:border-zinc-500"
               />
 
               <input
@@ -141,13 +220,13 @@ export default function DashboardPage() {
                 placeholder="Orçamento"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                className="rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 outline-none"
+                className="rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-4 outline-none transition focus:border-zinc-500"
               />
 
               <button
                 onClick={createList}
                 disabled={loading}
-                className="rounded-xl bg-white px-4 py-3 font-semibold text-black transition hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-white px-4 py-4 font-semibold text-black transition hover:opacity-90 disabled:opacity-50"
               >
                 {loading ? "Criando..." : "Criar lista"}
               </button>
@@ -159,13 +238,25 @@ export default function DashboardPage() {
               <p className="text-zinc-400">Nenhuma lista encontrada.</p>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {lists.map((list) => (
                 <Link href={`/lists/${list.id}`} key={list.id}>
                   <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 transition hover:border-zinc-600 hover:bg-zinc-800">
-                    <div className="mb-4 flex items-center justify-between">
-                      <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300">
-                        Lista
+                    <div className="mb-5 flex items-center justify-between">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs ${
+                          list.status === "planning"
+                            ? "bg-blue-500/20 text-blue-400"
+                            : list.status === "shopping"
+                              ? "bg-yellow-500/20 text-yellow-400"
+                              : "bg-green-500/20 text-green-400"
+                        }`}
+                      >
+                        {list.status === "planning" && "🏠 Planejamento"}
+
+                        {list.status === "shopping" && "🛒 Comprando"}
+
+                        {list.status === "completed" && "✅ Finalizada"}
                       </span>
                     </div>
 

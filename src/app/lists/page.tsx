@@ -50,7 +50,15 @@ export default function ListsPage() {
       return;
     }
 
-    setLists(data || []);
+    setLists(
+      (data || []).map((list) => ({
+        id: list.id,
+        title: list.title,
+        budget: list.budget ?? 0,
+        status:
+          (list.status as "planning" | "shopping" | "completed") ?? "planning",
+      })),
+    );
   }, [supabase]);
 
   useEffect(() => {

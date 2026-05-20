@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import AppLayout from "../../components/AppLayout";
 
-import ListCard from "../../components/lists/ListCard";
+import ListCard from "../../components/lists/ItemCard";
 
 import { createClient } from "../../lib/supabase/client";
 

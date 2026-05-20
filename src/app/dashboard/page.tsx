@@ -8,6 +8,8 @@ import AppLayout from "../../components/AppLayout";
 
 import { createClient } from "../../lib/supabase/client";
 
+import AnalyticsChart from "../../components/dashboard/AnalyticsChart";
+
 interface ShoppingList {
   id: string;
 
@@ -18,10 +20,18 @@ interface ShoppingList {
   owner_id: string;
 
   status: "planning" | "shopping" | "completed";
+
+  completed_at?: string | null;
 }
 
 interface MemberListResponse {
-  shopping_lists: ShoppingList[];
+  shopping_lists: {
+    id: string;
+    title: string;
+    budget: number | null;
+    owner_id: string | null;
+    status: string | null;
+  };
 }
 
 export default function DashboardPage() {
@@ -72,7 +82,18 @@ export default function DashboardPage() {
 
     const allLists = [...(ownLists || []), ...formattedMemberLists];
 
-    const uniqueLists = allLists.filter(
+    const normalizedLists: ShoppingList[] = allLists.map((list) => ({
+      id: list.id,
+      title: list.title ?? "Sem título",
+      budget: Number(list.budget ?? 0),
+      owner_id: list.owner_id ?? "",
+      status: (list.status ?? "planning") as
+        | "planning"
+        | "shopping"
+        | "completed",
+    }));
+
+    const uniqueLists = normalizedLists.filter(
       (list, index, self) => index === self.findIndex((l) => l.id === list.id),
     );
 
@@ -142,12 +163,31 @@ export default function DashboardPage() {
       0,
     );
 
+    const currentMonth = new Date().getMonth();
+
+    const monthlyLists = lists.filter((list) => {
+      if (!list.completed_at) return false;
+
+      const date = new Date(list.completed_at);
+
+      return date.getMonth() === currentMonth;
+    });
+
+    const monthlySpent = monthlyLists.reduce(
+      (acc, list) => acc + Number(list.budget || 0),
+      0,
+    );
+
+    const averagePerList = completed > 0 ? totalBudget / completed : 0;
+
     return {
       total: lists.length,
       planning,
       shopping,
       completed,
       totalBudget,
+      monthlySpent,
+      averagePerList,
     };
   }, [lists]);
 
@@ -163,7 +203,7 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
               <p className="text-sm text-zinc-400">Total de listas</p>
 
@@ -201,6 +241,21 @@ export default function DashboardPage() {
                 R$ {stats.totalBudget.toFixed(2)}
               </h2>
             </div>
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <p className="text-sm text-zinc-400">Gasto no mês</p>
+
+              <h2 className="mt-3 text-2xl font-bold text-yellow-400">
+                R$ {stats.monthlySpent.toFixed(2)}
+              </h2>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <p className="text-sm text-zinc-400">Média por compra</p>
+
+              <h2 className="mt-3 text-2xl font-bold text-blue-400">
+                R$ {stats.averagePerList.toFixed(2)}
+              </h2>
+            </div>
           </div>
 
           <div className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
@@ -231,6 +286,13 @@ export default function DashboardPage() {
                 {loading ? "Criando..." : "Criar lista"}
               </button>
             </div>
+          </div>
+          <div className="mb-8">
+            <AnalyticsChart
+              planning={stats.planning}
+              shopping={stats.shopping}
+              completed={stats.completed}
+            />
           </div>
 
           {lists.length === 0 ? (

@@ -46,6 +46,12 @@ export default function ListPage() {
 
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
 
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+
+  const [editingName, setEditingName] = useState("");
+
+  const [editingQuantity, setEditingQuantity] = useState("1");
+
   const [shareEmail, setShareEmail] = useState("");
 
   const [sharing, setSharing] = useState(false);
@@ -66,7 +72,9 @@ export default function ListPage() {
       return;
     }
 
-    setListStatus(data.status);
+    setListStatus(
+      (data.status as "planning" | "shopping" | "completed") ?? "planning",
+    );
 
     setBudget(Number(data.budget));
 
@@ -89,7 +97,15 @@ export default function ListPage() {
       return;
     }
 
-    setItems(data || []);
+    setItems(
+      (data || []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity ?? 1,
+        checked: item.checked ?? false,
+      })),
+    );
   }, [id, supabase]);
 
   const fetchSupermarkets = useCallback(async () => {
@@ -271,6 +287,49 @@ export default function ListPage() {
     if (error) {
       console.error(error);
     }
+
+    fetchItems();
+  }
+  async function deleteItem(itemId: string) {
+    const confirmed = confirm("Deseja remover este item?");
+
+    if (!confirmed) return;
+
+    const { error } = await supabase.from("items").delete().eq("id", itemId);
+
+    if (error) {
+      console.error(error);
+
+      toast.error("Erro ao remover item");
+
+      return;
+    }
+
+    toast.success("Item removido!");
+
+    fetchItems();
+  }
+
+  async function updateItem(itemId: string) {
+    const { error } = await supabase
+      .from("items")
+      .update({
+        name: editingName,
+        quantity: Number(editingQuantity),
+      })
+      .eq("id", itemId);
+
+    if (error) {
+      console.error(error);
+
+      toast.error("Erro ao atualizar item");
+
+      return;
+    }
+
+    toast.success("Item atualizado!");
+
+    setEditingItem(null);
 
     fetchItems();
   }
@@ -548,18 +607,122 @@ export default function ListPage() {
                         className="mt-1 h-5 w-5"
                       />
 
-                      <div>
-                        <h2
-                          className={`text-xl font-bold md:text-2xl ${
-                            item.checked ? "line-through text-zinc-500" : ""
-                          }`}
-                        >
-                          {item.name}
-                        </h2>
+                      <div className="flex-1">
+                        {editingItem === item.id ? (
+                          <div className="space-y-3">
+                            <input
+                              type="text"
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 outline-none"
+                            />
 
-                        <p className="mt-1 text-zinc-400">
-                          Quantidade: {item.quantity}
-                        </p>
+                            <input
+                              type="number"
+                              value={editingQuantity}
+                              onChange={(e) =>
+                                setEditingQuantity(e.target.value)
+                              }
+                              className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 outline-none"
+                            />
+
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => updateItem(item.id)}
+                                className="rounded-xl bg-green-500 px-4 py-2 font-semibold text-black"
+                              >
+                                Salvar
+                              </button>
+
+                              <button
+                                onClick={() => setEditingItem(null)}
+                                className="rounded-xl bg-zinc-700 px-4 py-2"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex-1">
+                            {editingItem === item.id ? (
+                              <div className="flex flex-col gap-3">
+                                <input
+                                  type="text"
+                                  value={editingName}
+                                  onChange={(e) =>
+                                    setEditingName(e.target.value)
+                                  }
+                                  className="rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 outline-none"
+                                />
+
+                                <input
+                                  type="number"
+                                  value={editingQuantity}
+                                  onChange={(e) =>
+                                    setEditingQuantity(e.target.value)
+                                  }
+                                  className="rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 outline-none"
+                                />
+
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => updateItem(item.id)}
+                                    className="rounded-xl bg-green-500 px-4 py-2 font-semibold text-black"
+                                  >
+                                    Salvar
+                                  </button>
+
+                                  <button
+                                    onClick={() => setEditingItem(null)}
+                                    className="rounded-xl bg-zinc-700 px-4 py-2 font-semibold text-white"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <h2
+                                  className={`text-xl font-bold md:text-2xl ${
+                                    item.checked
+                                      ? "line-through text-zinc-500"
+                                      : ""
+                                  }`}
+                                >
+                                  {item.name}
+                                </h2>
+
+                                <p className="mt-1 text-zinc-400">
+                                  Quantidade: {item.quantity}
+                                </p>
+
+                                {listStatus === "planning" && (
+                                  <div className="mt-4 flex gap-2">
+                                    <button
+                                      onClick={() => {
+                                        setEditingItem(item.id);
+                                        setEditingName(item.name);
+                                        setEditingQuantity(
+                                          String(item.quantity),
+                                        );
+                                      }}
+                                      className="rounded-xl bg-yellow-500 px-4 py-2 font-semibold text-black"
+                                    >
+                                      ✏️ Editar
+                                    </button>
+
+                                    <button
+                                      onClick={() => deleteItem(item.id)}
+                                      className="rounded-xl bg-red-500 px-4 py-2 font-semibold text-white"
+                                    >
+                                      🗑️ Remover
+                                    </button>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 

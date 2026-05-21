@@ -1,5 +1,5 @@
 "use client";
-
+import ListCardSkeleton from "../../components/lists/ListCardSkeleton";
 import { useCallback, useEffect, useState } from "react";
 
 import AppLayout from "../../components/AppLayout";
@@ -7,7 +7,7 @@ import AppLayout from "../../components/AppLayout";
 import ListCard from "../../components/lists/ListCard";
 
 import { createClient } from "../../lib/supabase/client";
-
+import FadeIn from "../../components/animations/FadeIn";
 interface ShoppingList {
   id: string;
 
@@ -22,7 +22,7 @@ export default function ListsPage() {
   const supabase = createClient();
 
   const [lists, setLists] = useState<ShoppingList[]>([]);
-
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   const [filterStatus, setFilterStatus] = useState<
@@ -30,35 +30,44 @@ export default function ListsPage() {
   >("all");
 
   const fetchLists = useCallback(async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      setLoading(true);
 
-    if (!user) return;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    const { data, error } = await supabase
-      .from("shopping_lists")
-      .select("*")
-      .eq("owner_id", user.id)
-      .order("created_at", {
-        ascending: false,
-      });
+      if (!user) return;
 
-    if (error) {
+      const { data, error } = await supabase
+        .from("shopping_lists")
+        .select("*")
+        .eq("owner_id", user.id)
+        .order("created_at", {
+          ascending: false,
+        });
+
+      if (error) {
+        console.error(error);
+
+        return;
+      }
+
+      setLists(
+        (data || []).map((list) => ({
+          id: list.id,
+          title: list.title,
+          budget: list.budget ?? 0,
+          status:
+            (list.status as "planning" | "shopping" | "completed") ??
+            "planning",
+        })),
+      );
+    } catch (error) {
       console.error(error);
-
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    setLists(
-      (data || []).map((list) => ({
-        id: list.id,
-        title: list.title,
-        budget: list.budget ?? 0,
-        status:
-          (list.status as "planning" | "shopping" | "completed") ?? "planning",
-      })),
-    );
   }, [supabase]);
 
   useEffect(() => {
@@ -89,64 +98,70 @@ export default function ListsPage() {
               Todas as suas listas de compras
             </p>
           </div>
+          <FadeIn delay={0.1}>
+            <div className="mb-8 space-y-4">
+              <input
+                type="text"
+                placeholder="Buscar lista..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 outline-none transition focus:border-zinc-600"
+              />
 
-          <div className="mb-8 space-y-4">
-            <input
-              type="text"
-              placeholder="Buscar lista..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 outline-none transition focus:border-zinc-600"
-            />
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => setFilterStatus("all")}
+                  className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                    filterStatus === "all"
+                      ? "bg-white text-black"
+                      : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
+                  }`}
+                >
+                  Todas
+                </button>
 
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setFilterStatus("all")}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
-                  filterStatus === "all"
-                    ? "bg-white text-black"
-                    : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
-                }`}
-              >
-                Todas
-              </button>
+                <button
+                  onClick={() => setFilterStatus("planning")}
+                  className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                    filterStatus === "planning"
+                      ? "bg-white text-black"
+                      : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
+                  }`}
+                >
+                  🏠 Planejamento
+                </button>
 
-              <button
-                onClick={() => setFilterStatus("planning")}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
-                  filterStatus === "planning"
-                    ? "bg-white text-black"
-                    : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
-                }`}
-              >
-                🏠 Planejamento
-              </button>
+                <button
+                  onClick={() => setFilterStatus("shopping")}
+                  className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                    filterStatus === "shopping"
+                      ? "bg-white text-black"
+                      : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
+                  }`}
+                >
+                  🛒 Comprando
+                </button>
 
-              <button
-                onClick={() => setFilterStatus("shopping")}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
-                  filterStatus === "shopping"
-                    ? "bg-white text-black"
-                    : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
-                }`}
-              >
-                🛒 Comprando
-              </button>
-
-              <button
-                onClick={() => setFilterStatus("completed")}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
-                  filterStatus === "completed"
-                    ? "bg-white text-black"
-                    : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
-                }`}
-              >
-                ✅ Finalizadas
-              </button>
+                <button
+                  onClick={() => setFilterStatus("completed")}
+                  className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                    filterStatus === "completed"
+                      ? "bg-white text-black"
+                      : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
+                  }`}
+                >
+                  ✅ Finalizadas
+                </button>
+              </div>
             </div>
-          </div>
-
-          {filteredLists.length === 0 ? (
+          </FadeIn>
+          {loading ? (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <ListCardSkeleton key={index} />
+              ))}
+            </div>
+          ) : filteredLists.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-zinc-700 p-12 text-center">
               <p className="text-zinc-400">Nenhuma lista encontrada.</p>
             </div>

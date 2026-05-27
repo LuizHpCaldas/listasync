@@ -6,7 +6,7 @@ interface Props {
   id: string;
   title: string;
   budget: number;
-  status: "planning" | "shopping" | "completed";
+  status?: "planning" | "shopping" | "completed";
 }
 
 export default function ListCard({ id, title, budget, status }: Props) {

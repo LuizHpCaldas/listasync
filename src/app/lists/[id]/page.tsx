@@ -11,6 +11,8 @@ import { createClient } from "../../../lib/supabase/client";
 import { Supermarket } from "../../../types/supermarket";
 import { toast } from "sonner";
 import ListCard from "../../../components/lists/ItemCard";
+import { checkPremium } from "../../../lib/checkPremium";
+import { canShareLists } from "../../../lib/premiumGate";
 
 interface Item {
   id: string;
@@ -56,7 +58,7 @@ export default function ListPage() {
   const [shareEmail, setShareEmail] = useState("");
 
   const [sharing, setSharing] = useState(false);
-
+  const [isPremium, setIsPremium] = useState(false);
   const [supermarkets, setSupermarkets] = useState<Supermarket[]>([]);
 
   const [selectedSupermarket, setSelectedSupermarket] = useState("");
@@ -195,6 +197,12 @@ export default function ListPage() {
 
   async function shareList() {
     try {
+      const premium = await checkPremium();
+
+      if (!premium) {
+        toast.error("Disponível apenas para Premium");
+        return;
+      }
       setSharing(true);
 
       if (!shareEmail) {
@@ -385,6 +393,8 @@ export default function ListPage() {
       fetchList();
 
       fetchSupermarkets();
+
+      canShareLists().then(setIsPremium);
     });
 
     const channel = supabase

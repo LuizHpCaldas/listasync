@@ -88,7 +88,9 @@ export default function DashboardPage() {
         (item) => item.shopping_lists,
       ) || [];
 
-    const allLists = [...(ownLists || []), ...formattedMemberLists];
+    const allLists = [...(ownLists || []), ...formattedMemberLists].filter(
+      Boolean,
+    );
 
     const normalizedLists: ShoppingList[] = allLists.map((list) => ({
       id: list.id,

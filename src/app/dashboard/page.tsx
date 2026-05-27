@@ -10,6 +10,8 @@ import { createClient } from "../../lib/supabase/client";
 
 import AnalyticsChart from "../../components/dashboard/AnalyticsChart";
 
+import { checkPremium } from "../../lib/checkPremium";
+
 interface ShoppingList {
   id: string;
 
@@ -45,12 +47,18 @@ export default function DashboardPage() {
 
   const [loading, setLoading] = useState(false);
 
+  const [isPremium, setIsPremium] = useState(false);
+
   const fetchLists = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) return;
+
+    const premium = await checkPremium();
+
+    setIsPremium(premium);
 
     const { data: ownLists } = await supabase
       .from("shopping_lists")
@@ -203,7 +211,7 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-8">
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
               <p className="text-sm text-zinc-400">Total de listas</p>
 
@@ -241,6 +249,7 @@ export default function DashboardPage() {
                 R$ {stats.totalBudget.toFixed(2)}
               </h2>
             </div>
+
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
               <p className="text-sm text-zinc-400">Gasto no mês</p>
 
@@ -256,10 +265,68 @@ export default function DashboardPage() {
                 R$ {stats.averagePerList.toFixed(2)}
               </h2>
             </div>
+
+            <div
+              className={`rounded-2xl border p-5 ${
+                isPremium
+                  ? "border-yellow-500 bg-yellow-500/10"
+                  : "border-zinc-800 bg-zinc-900"
+              }`}
+            >
+              <p className="text-sm text-zinc-400">Plano</p>
+
+              <h2 className="mt-3 text-2xl font-bold">
+                {isPremium ? "⭐ Premium" : "Free"}
+              </h2>
+
+              {!isPremium && (
+                <Link
+                  href="/premium"
+                  className="mt-4 inline-block rounded-xl bg-yellow-500 px-4 py-2 font-semibold text-black transition hover:opacity-90"
+                >
+                  Fazer upgrade
+                </Link>
+              )}
+            </div>
           </div>
 
           <div className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-            <h2 className="mb-4 text-2xl font-bold">Nova lista</h2>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Nova lista</h2>
+
+              {!isPremium && (
+                <span className="rounded-full bg-yellow-500/20 px-3 py-1 text-xs font-semibold text-yellow-400">
+                  FREE
+                </span>
+              )}
+            </div>
+
+            {!isPremium && (
+              <div className="mb-5 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4">
+                <p className="text-sm text-zinc-300">
+                  O plano gratuito permite criar listas normalmente.
+                </p>
+
+                <p className="mt-2 text-sm text-zinc-400">Recursos premium:</p>
+
+                <ul className="mt-2 space-y-1 text-sm text-zinc-300">
+                  <li>⭐ Compartilhar listas</li>
+
+                  <li>⭐ Compras colaborativas</li>
+
+                  <li>⭐ Relatórios inteligentes com IA</li>
+
+                  <li>⭐ Recursos avançados futuros</li>
+                </ul>
+
+                <Link
+                  href="/premium"
+                  className="mt-4 inline-block rounded-xl bg-yellow-500 px-5 py-3 font-semibold text-black transition hover:opacity-90"
+                >
+                  Assinar Premium
+                </Link>
+              </div>
+            )}
 
             <div className="grid gap-4 md:grid-cols-3">
               <input
@@ -287,6 +354,7 @@ export default function DashboardPage() {
               </button>
             </div>
           </div>
+
           <div className="mb-8">
             <AnalyticsChart
               planning={stats.planning}

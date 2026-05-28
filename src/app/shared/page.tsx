@@ -4,8 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import AppLayout from "../../components/AppLayout";
 
-import ListCard from "../../components/lists/ItemCard";
-
+import ListCard from "../../components/lists/ListCard";
 import { createClient } from "../../lib/supabase/client";
 
 interface SharedList {

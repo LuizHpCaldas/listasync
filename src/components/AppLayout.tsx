@@ -49,7 +49,7 @@ export default function AppLayout({ children }: Props) {
       .from("profiles")
       .select("full_name, avatar_url")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error(error);

@@ -26,6 +26,7 @@ export default function LoginPage() {
         return;
       }
 
+      router.refresh();
       router.push("/dashboard");
     } catch (error) {
       console.error(error);

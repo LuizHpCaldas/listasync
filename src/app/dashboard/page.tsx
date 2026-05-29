@@ -116,9 +116,16 @@ export default function DashboardPage() {
 
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
 
-      if (!user) return;
+      console.log("USER:", user);
+
+      if (userError || !user) {
+        alert("Usuário não autenticado");
+
+        return;
+      }
 
       if (!title || !budget) {
         alert("Preencha todos os campos");
@@ -126,16 +133,20 @@ export default function DashboardPage() {
         return;
       }
 
-      const { error } = await supabase.from("shopping_lists").insert({
-        title,
-        budget: Number(budget),
-        owner_id: user.id,
-        status: "planning",
-      });
+      const { data, error } = await supabase
+        .from("shopping_lists")
+        .insert({
+          title,
+          budget: Number(budget),
+          owner_id: user.id,
+          status: "planning",
+        })
+        .select();
+
+      console.log("RESULT:", data);
+      console.log("ERROR:", error);
 
       if (error) {
-        console.error(error);
-
         alert(error.message);
 
         return;
@@ -145,9 +156,11 @@ export default function DashboardPage() {
 
       setBudget("");
 
-      fetchLists();
+      await fetchLists();
     } catch (error) {
       console.error(error);
+
+      alert("Erro inesperado");
     } finally {
       setLoading(false);
     }

@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request,
   });
@@ -64,7 +64,8 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith("/dashboard") ||
     request.nextUrl.pathname.startsWith("/lists") ||
-    request.nextUrl.pathname.startsWith("/shared");
+    request.nextUrl.pathname.startsWith("/shared") ||
+    request.nextUrl.pathname.startsWith("/profile");
 
   if (!user && isProtectedRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -78,5 +79,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/lists/:path*", "/shared/:path*", "/login"],
+  matcher: [
+    "/dashboard/:path*",
+    "/lists/:path*",
+    "/shared/:path*",
+    "/profile/:path*",
+    "/login",
+  ],
 };

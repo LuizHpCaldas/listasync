@@ -19,6 +19,7 @@ import {
   Store,
 } from "lucide-react";
 
+import NotificationBell from "./NotificationBell";
 interface Props {
   children: React.ReactNode;
 }
@@ -146,6 +147,8 @@ export default function AppLayout({ children }: Props) {
         </div>
 
         <nav className="flex-1 space-y-2 p-4">
+          <NotificationBell />
+
           {navItems.map((item) => {
             const Icon = item.icon;
 

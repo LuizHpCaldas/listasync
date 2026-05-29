@@ -9,9 +9,13 @@ import AppLayout from "../../../components/AppLayout";
 import { createClient } from "../../../lib/supabase/client";
 
 import { Supermarket } from "../../../types/supermarket";
+
 import { toast } from "sonner";
+
 import ListCard from "../../../components/lists/ItemCard";
+
 import { checkPremium } from "../../../lib/checkPremium";
+
 import { canShareLists } from "../../../lib/premiumGate";
 
 interface Item {
@@ -58,12 +62,22 @@ export default function ListPage() {
   const [shareEmail, setShareEmail] = useState("");
 
   const [sharing, setSharing] = useState(false);
+
   const [isPremium, setIsPremium] = useState(false);
+
   const [supermarkets, setSupermarkets] = useState<Supermarket[]>([]);
 
   const [selectedSupermarket, setSelectedSupermarket] = useState("");
 
+  const [canEdit, setCanEdit] = useState(false);
+
   const fetchList = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
     const { data, error } = await supabase
       .from("shopping_lists")
       .select("*")
@@ -72,6 +86,9 @@ export default function ListPage() {
 
     if (error) {
       console.error(error);
+
+      toast.error("Erro ao carregar lista");
+
       return;
     }
 
@@ -84,6 +101,17 @@ export default function ListPage() {
     if (data.supermarket_id) {
       setSelectedSupermarket(data.supermarket_id);
     }
+
+    const isOwner = data.owner_id === user.id;
+
+    const { data: member } = await supabase
+      .from("list_members")
+      .select("*")
+      .eq("list_id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    setCanEdit(isOwner || !!member);
   }, [id, supabase]);
 
   const fetchItems = useCallback(async () => {
@@ -97,6 +125,9 @@ export default function ListPage() {
 
     if (error) {
       console.error(error);
+
+      toast.error("Erro ao carregar itens");
+
       return;
     }
 
@@ -119,6 +150,7 @@ export default function ListPage() {
 
     if (error) {
       console.error(error);
+
       return;
     }
 
@@ -129,8 +161,15 @@ export default function ListPage() {
     try {
       setLoading(true);
 
+      if (!canEdit) {
+        toast.error("Você não pode editar esta lista");
+
+        return;
+      }
+
       if (!name || !quantity) {
-        alert("Preencha todos os campos");
+        toast.error("Preencha todos os campos");
+
         return;
       }
 
@@ -143,7 +182,7 @@ export default function ListPage() {
       if (error) {
         console.error(error);
 
-        alert(error.message);
+        toast.error(error.message);
 
         return;
       }
@@ -153,6 +192,8 @@ export default function ListPage() {
       setQuantity("1");
 
       fetchItems();
+
+      toast.success("Item adicionado!");
     } catch (error) {
       console.error(error);
     } finally {
@@ -201,12 +242,15 @@ export default function ListPage() {
 
       if (!premium) {
         toast.error("Disponível apenas para Premium");
+
         return;
       }
+
       setSharing(true);
 
       if (!shareEmail) {
-        alert("Digite um email");
+        toast.error("Digite um email");
+
         return;
       }
 
@@ -218,7 +262,8 @@ export default function ListPage() {
       );
 
       if (userError || !userId) {
-        alert("Usuário não encontrado");
+        toast.error("Usuário não encontrado");
+
         return;
       }
 
@@ -230,14 +275,23 @@ export default function ListPage() {
       if (error) {
         console.error(error);
 
-        alert(error.message);
+        toast.error(error.message);
 
         return;
       }
 
+      // NOTIFICAÇÃO
+      await supabase.from("notifications").insert({
+        user_id: userId,
+        type: "list_share",
+        title: "Nova lista compartilhada",
+        message: "Uma lista foi compartilhada com você",
+        read: false,
+      });
+
       setShareEmail("");
 
-      alert("Lista compartilhada!");
+      toast.success("Lista compartilhada!");
     } catch (error) {
       console.error(error);
     } finally {
@@ -248,6 +302,7 @@ export default function ListPage() {
   async function saveSupermarket() {
     if (!selectedSupermarket) {
       toast.error("Selecione um supermercado");
+
       return;
     }
 
@@ -280,6 +335,8 @@ export default function ListPage() {
 
     if (error) {
       console.error(error);
+
+      return;
     }
 
     fetchItems();
@@ -295,10 +352,13 @@ export default function ListPage() {
 
     if (error) {
       console.error(error);
+
+      return;
     }
 
     fetchItems();
   }
+
   async function deleteItem(itemId: string) {
     const confirmed = confirm("Deseja remover este item?");
 
@@ -430,6 +490,12 @@ export default function ListPage() {
     <AppLayout>
       <main className="min-h-screen overflow-x-hidden bg-zinc-950 pb-32 text-white">
         <div className="mx-auto max-w-5xl p-4 md:p-6">
+          {!canEdit && (
+            <div className="mb-6 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-yellow-300">
+              Você possui apenas acesso de visualização nesta lista.
+            </div>
+          )}
+
           <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
               <span className="inline-flex rounded-full bg-zinc-800 px-4 py-2 text-sm text-zinc-300">
@@ -535,25 +601,27 @@ export default function ListPage() {
             </div>
           </div>
 
-          <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 md:flex-row">
-            <input
-              type="email"
-              placeholder="Compartilhar por email"
-              value={shareEmail}
-              onChange={(e) => setShareEmail(e.target.value)}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 outline-none transition focus:border-zinc-500"
-            />
+          {isPremium && (
+            <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 md:flex-row">
+              <input
+                type="email"
+                placeholder="Compartilhar por email"
+                value={shareEmail}
+                onChange={(e) => setShareEmail(e.target.value)}
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 outline-none transition focus:border-zinc-500"
+              />
 
-            <button
-              onClick={shareList}
-              disabled={sharing}
-              className="rounded-xl bg-blue-500 px-6 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-            >
-              {sharing ? "Compartilhando..." : "Compartilhar"}
-            </button>
-          </div>
+              <button
+                onClick={shareList}
+                disabled={sharing}
+                className="rounded-xl bg-blue-500 px-6 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+              >
+                {sharing ? "Compartilhando..." : "Compartilhar"}
+              </button>
+            </div>
+          )}
 
-          {listStatus === "planning" && (
+          {listStatus === "planning" && canEdit && (
             <>
               <div className="mb-4">
                 <button

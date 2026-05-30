@@ -1,4 +1,5 @@
 "use client";
+import ShareList from "../../../components/lists/ShareList";
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -13,8 +14,6 @@ import { Supermarket } from "../../../types/supermarket";
 import { toast } from "sonner";
 
 import ListCard from "../../../components/lists/ItemCard";
-
-import { checkPremium } from "../../../lib/checkPremium";
 
 import { canShareLists } from "../../../lib/premiumGate";
 
@@ -58,10 +57,6 @@ export default function ListPage() {
   const [editingName, setEditingName] = useState("");
 
   const [editingQuantity, setEditingQuantity] = useState("1");
-
-  const [shareEmail, setShareEmail] = useState("");
-
-  const [sharing, setSharing] = useState(false);
 
   const [isPremium, setIsPremium] = useState(false);
 
@@ -233,69 +228,6 @@ export default function ListPage() {
       console.error(error);
     } finally {
       setDeleting(false);
-    }
-  }
-
-  async function shareList() {
-    try {
-      const premium = await checkPremium();
-
-      if (!premium) {
-        toast.error("Disponível apenas para Premium");
-
-        return;
-      }
-
-      setSharing(true);
-
-      if (!shareEmail) {
-        toast.error("Digite um email");
-
-        return;
-      }
-
-      const { data: userId, error: userError } = await supabase.rpc(
-        "get_user_id_by_email",
-        {
-          user_email: shareEmail,
-        },
-      );
-
-      if (userError || !userId) {
-        toast.error("Usuário não encontrado");
-
-        return;
-      }
-
-      const { error } = await supabase.from("list_members").insert({
-        list_id: id,
-        user_id: userId,
-      });
-
-      if (error) {
-        console.error(error);
-
-        toast.error(error.message);
-
-        return;
-      }
-
-      // NOTIFICAÇÃO
-      await supabase.from("notifications").insert({
-        user_id: userId,
-        type: "list_share",
-        title: "Nova lista compartilhada",
-        message: "Uma lista foi compartilhada com você",
-        read: false,
-      });
-
-      setShareEmail("");
-
-      toast.success("Lista compartilhada!");
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSharing(false);
     }
   }
 
@@ -601,25 +533,7 @@ export default function ListPage() {
             </div>
           </div>
 
-          {isPremium && (
-            <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 md:flex-row">
-              <input
-                type="email"
-                placeholder="Compartilhar por email"
-                value={shareEmail}
-                onChange={(e) => setShareEmail(e.target.value)}
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 outline-none transition focus:border-zinc-500"
-              />
-
-              <button
-                onClick={shareList}
-                disabled={sharing}
-                className="rounded-xl bg-blue-500 px-6 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              >
-                {sharing ? "Compartilhando..." : "Compartilhar"}
-              </button>
-            </div>
-          )}
+          <ShareList listId={id} isPremium={isPremium} />
 
           {listStatus === "planning" && canEdit && (
             <>

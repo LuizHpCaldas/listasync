@@ -46,9 +46,17 @@ export default function SupermarketsPage() {
         return;
       }
 
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert("Usuário não autenticado");
+        return;
+      }
+
       const { error } = await supabase.from("supermarkets").insert({
         name,
         city,
+        user_id: user.id,
       });
 
       if (error) {

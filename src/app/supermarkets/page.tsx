@@ -46,7 +46,9 @@ export default function SupermarketsPage() {
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
         alert("Usuário não autenticado");
@@ -57,7 +59,7 @@ export default function SupermarketsPage() {
         name,
         city,
         user_id: user.id,
-      });
+      } as never);
 
       if (error) {
         console.error(error);

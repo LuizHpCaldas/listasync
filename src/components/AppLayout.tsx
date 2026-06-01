@@ -191,6 +191,8 @@ export default function AppLayout({ children }: Props) {
 
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-900/95 backdrop-blur lg:hidden">
         <div className="flex items-center justify-around py-3">
+          <NotificationBell />
+
           {navItems.map((item) => {
             const Icon = item.icon;
 
@@ -205,7 +207,6 @@ export default function AppLayout({ children }: Props) {
                 }`}
               >
                 <Icon size={22} />
-
                 <span>{item.label}</span>
               </Link>
             );
@@ -216,7 +217,6 @@ export default function AppLayout({ children }: Props) {
             className="flex flex-col items-center gap-1 px-3 py-2 text-xs text-zinc-500"
           >
             <LogOut size={22} />
-
             <span>Sair</span>
           </button>
         </div>

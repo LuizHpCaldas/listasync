@@ -13,6 +13,7 @@ import {
   User,
   LogOut,
   Store,
+  MessageCircle,
 } from "lucide-react";
 
 import NotificationBell from "./NotificationBell";
@@ -33,13 +34,15 @@ export default function AppLayout({ children }: Props) {
       ? "ListaSync"
       : pathname === "/lists"
         ? "Minhas Listas"
-        : pathname === "/shared"
-          ? "Compartilhadas"
-          : pathname === "/supermarkets"
-            ? "Mercados"
-            : pathname === "/profile"
-              ? "Perfil"
-              : "ListaSync";
+        : pathname === "/messages"
+          ? "Mensagens"
+          : pathname === "/shared"
+            ? "Compartilhadas"
+            : pathname === "/supermarkets"
+              ? "Mercados"
+              : pathname === "/profile"
+                ? "Perfil"
+                : "ListaSync";
   const router = useRouter();
   const supabase = createClient();
 
@@ -85,6 +88,12 @@ export default function AppLayout({ children }: Props) {
       href: "/dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
+    },
+    {
+      id: "messages",
+      href: "/messages",
+      label: "Mensagens",
+      icon: MessageCircle,
     },
     {
       id: "listas",

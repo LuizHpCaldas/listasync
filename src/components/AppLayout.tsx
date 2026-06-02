@@ -28,6 +28,18 @@ interface Profile {
 
 export default function AppLayout({ children }: Props) {
   const pathname = usePathname();
+  const pageTitle =
+    pathname === "/dashboard"
+      ? "ListaSync"
+      : pathname === "/lists"
+        ? "Minhas Listas"
+        : pathname === "/shared"
+          ? "Compartilhadas"
+          : pathname === "/supermarkets"
+            ? "Mercados"
+            : pathname === "/profile"
+              ? "Perfil"
+              : "ListaSync";
   const router = useRouter();
   const supabase = createClient();
 
@@ -175,7 +187,11 @@ export default function AppLayout({ children }: Props) {
       {/* Conteúdo */}
       <div className="lg:pl-72">
         {/* Topbar */}
-        <header className="sticky top-0 z-40 flex justify-end border-b border-zinc-800 bg-zinc-950/80 p-4 backdrop-blur">
+        <header className="sticky top-0 z-40 flex items-center justify-between border-b border-zinc-800 bg-zinc-950/90 px-6 py-4 backdrop-blur">
+          <div>
+            <h1 className="text-2xl font-bold">{pageTitle}</h1>
+          </div>
+
           <NotificationBell />
         </header>
 

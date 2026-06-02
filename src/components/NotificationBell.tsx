@@ -158,8 +158,13 @@ export default function NotificationBell() {
       {open && (
         <>
           {/* MOBILE */}
-          <div className="fixed inset-0 z-[9999] bg-zinc-950 lg:hidden">
-            <div className="flex items-center justify-between border-b border-zinc-800 p-4">
+          <div
+            className="fixed inset-0 z-[99999] bg-black lg:hidden"
+            style={{
+              backgroundColor: "#09090b",
+            }}
+          >
+            <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 p-4">
               <h2 className="text-lg font-bold text-white">Notificações</h2>
 
               <button onClick={() => setOpen(false)} className="text-zinc-400">
@@ -168,7 +173,7 @@ export default function NotificationBell() {
             </div>
 
             {notifications.length > 0 && (
-              <div className="border-b border-zinc-800 p-4">
+              <div className="border-b border-zinc-800 bg-zinc-950 p-4">
                 <button
                   onClick={markAllAsRead}
                   className="text-sm text-blue-400"
@@ -178,7 +183,7 @@ export default function NotificationBell() {
               </div>
             )}
 
-            <div className="overflow-y-auto pb-24">
+            <div className="h-[calc(100vh-120px)] overflow-y-auto bg-zinc-950">
               {notifications.length === 0 ? (
                 <div className="p-8 text-center text-zinc-400">
                   Nenhuma notificação
@@ -188,8 +193,8 @@ export default function NotificationBell() {
                   <button
                     key={notification.id}
                     onClick={() => markAsRead(notification.id)}
-                    className={`w-full border-b border-zinc-800 p-4 text-left transition ${
-                      !notification.read ? "bg-zinc-800/40" : ""
+                    className={`w-full border-b border-zinc-800 p-4 text-left ${
+                      !notification.read ? "bg-zinc-800" : "bg-zinc-900"
                     }`}
                   >
                     <h3 className="font-semibold text-white">

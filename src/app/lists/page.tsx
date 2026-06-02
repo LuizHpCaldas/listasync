@@ -91,13 +91,6 @@ export default function ListsPage() {
     <AppLayout>
       <main className="min-h-screen bg-zinc-950 p-4 pb-32 text-white md:p-6">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold">Minhas Listas</h1>
-
-            <p className="mt-2 text-zinc-400">
-              Todas as suas listas de compras
-            </p>
-          </div>
           <FadeIn delay={0.1}>
             <div className="mb-8 space-y-4">
               <input

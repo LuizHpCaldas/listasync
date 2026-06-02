@@ -52,36 +52,41 @@ export default function NotificationBell() {
   }, [loadNotifications]);
 
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | undefined;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    async function subscribe() {
+    async function setupRealtime() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) return;
 
-      channel = supabase
-        .channel(`notifications-${user.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "notifications",
-            filter: `user_id=eq.${user.id}`,
-          },
-          () => {
-            void loadNotifications();
-          },
-        )
-        .subscribe();
+      channel = supabase.channel(
+        `notifications-${user.id}-${crypto.randomUUID()}`,
+      );
+
+      channel.on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          void loadNotifications();
+        },
+      );
+
+      channel.subscribe();
     }
 
-    void subscribe();
+    void setupRealtime();
 
     return () => {
-      channel?.unsubscribe();
+      if (channel) {
+        channel.unsubscribe();
+      }
     };
   }, [supabase, loadNotifications]);
 

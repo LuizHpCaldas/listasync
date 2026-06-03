@@ -52,6 +52,13 @@ export default function MessagesPage() {
       <div className="p-6">
         <h1 className="mb-6 text-3xl font-bold">Mensagens</h1>
 
+        <Link
+          href="/messages/new"
+          className="rounded-xl bg-violet-600 px-4 py-2 font-medium hover:bg-violet-700"
+        >
+          + Nova conversa
+        </Link>
+
         {loading ? (
           <div className="text-zinc-400">Carregando...</div>
         ) : conversations.length === 0 ? (

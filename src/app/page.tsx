@@ -75,7 +75,17 @@ export default function HomePage() {
               IA para economia doméstica
             </div>
 
-            <h1 className="mt-8 text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
+            <h1
+              className="
+mt-8
+text-4xl
+font-black
+leading-[1]
+tracking-tight
+sm:text-5xl
+md:text-6xl
+lg:text-7xl"
+            >
               Economize mais.
               <br />
               Organize tudo.

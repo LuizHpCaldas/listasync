@@ -7,8 +7,7 @@ import AppLayout from "../../components/AppLayout";
 import { createClient } from "../../lib/supabase/client";
 
 interface Conversation {
-  conversation_id: string | null;
-  user_id: string | null;
+  conversation_id: string;
 }
 
 export default function MessagesPage() {
@@ -23,34 +22,29 @@ export default function MessagesPage() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      console.log("USER LOGADO:", user);
-
       if (!user) {
-        console.log("Nenhum usuário autenticado.");
         setLoading(false);
         return;
       }
 
       const { data, error } = await supabase
         .from("conversation_participants")
-        .select("*");
-
-      console.log("CONVERSAS ENCONTRADAS:", data);
+        .select("conversation_id")
+        .eq("user_id", user.id);
 
       if (error) {
-        console.error("ERRO AO BUSCAR CONVERSAS:", error);
-        setLoading(false);
+        console.error(error);
         return;
       }
 
-      const userConversations =
-        data?.filter((conversation) => conversation.user_id === user.id) || [];
-
-      console.log("CONVERSAS DO USUÁRIO:", userConversations);
-
-      setConversations(userConversations);
+      setConversations(
+        (data ?? []).filter(
+          (item): item is Conversation =>
+            typeof item.conversation_id === "string",
+        ),
+      );
     } catch (error) {
-      console.error("ERRO GERAL:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -65,10 +59,19 @@ export default function MessagesPage() {
   return (
     <AppLayout>
       <div className="p-6">
-        <h1 className="mb-6 text-3xl font-bold">Mensagens</h1>
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Mensagens</h1>
+
+          <Link
+            href="/messages/new"
+            className="rounded-xl bg-violet-600 px-4 py-2 font-medium text-white transition hover:bg-violet-500"
+          >
+            Nova conversa
+          </Link>
+        </div>
 
         {loading ? (
-          <div className="text-zinc-400">Carregando...</div>
+          <div className="text-zinc-400">Carregando conversas...</div>
         ) : conversations.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
             Você ainda não possui conversas.
